@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { X, Trash2, Save, Eye, Edit3 } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import { PRIORITIES, PRIORITY_META, effectiveDeadline, formatDateFR, relativeFromNow } from '../utils/deadlines'
@@ -34,11 +34,23 @@ function toLocalDateValue(iso) {
 export default function TaskDrawer({ open, task, categories, onClose, onSave, onDelete }) {
   const [draft, setDraft] = useState(task || null)
   const [mdMode, setMdMode] = useState('edit')
+  const [priorityFromCat, setPriorityFromCat] = useState(false)
 
   useEffect(() => {
     setDraft(task || null)
     setMdMode('edit')
+    setPriorityFromCat(false)
   }, [task])
+
+  const handleCategoryChange = useCallback((catId) => {
+    const cat = categories.find(c => c.id === catId)
+    setDraft(d => ({
+      ...d,
+      categoryId: catId || null,
+      ...(cat?.priority ? { priority: cat.priority } : {})
+    }))
+    setPriorityFromCat(!!cat?.priority)
+  }, [categories])
 
   const autoPreview = useMemo(() => {
     if (!draft) return null
@@ -91,7 +103,7 @@ export default function TaskDrawer({ open, task, categories, onClose, onSave, on
                     key={p}
                     className={`priority-btn ${active ? 'active' : ''}`}
                     style={{ color: meta.color }}
-                    onClick={() => patch({ priority: p })}
+                    onClick={() => { patch({ priority: p }); setPriorityFromCat(false) }}
                     type="button"
                   >
                     {p} · {meta.label}
@@ -99,6 +111,11 @@ export default function TaskDrawer({ open, task, categories, onClose, onSave, on
                 )
               })}
             </div>
+            {priorityFromCat && (
+              <span className="t-label" style={{ color: 'var(--text-secondary)', marginTop: 6 }}>
+                ← HÉRITÉE DE LA CATÉGORIE · cliquer pour overrider
+              </span>
+            )}
             {autoPreview && (
               <span className="t-label" style={{ color: 'var(--text-secondary)', marginTop: 6 }}>
                 {autoPreview}
@@ -112,13 +129,28 @@ export default function TaskDrawer({ open, task, categories, onClose, onSave, on
             <select
               className="select"
               value={draft.categoryId || ''}
-              onChange={e => patch({ categoryId: e.target.value || null })}
+              onChange={e => handleCategoryChange(e.target.value)}
             >
               <option value="">// none</option>
               {categories.map(c => (
-                <option key={c.id} value={c.id}>{c.name}</option>
+                <option key={c.id} value={c.id}>
+                  {c.emoji ? `${c.emoji} ` : ''}{c.name}{c.priority ? ` · ${c.priority}` : ''}
+                </option>
               ))}
             </select>
+          </div>
+
+          {/* Emoji */}
+          <div className="field">
+            <label className="t-label">EMOJI <span className="t-muted">(facultatif)</span></label>
+            <input
+              className="input"
+              value={draft.emoji || ''}
+              onChange={e => patch({ emoji: e.target.value.trim() || null })}
+              placeholder="✅ 🔥 🚀 …"
+              maxLength={4}
+              style={{ width: 90 }}
+            />
           </div>
 
           {/* Couleur de la task */}

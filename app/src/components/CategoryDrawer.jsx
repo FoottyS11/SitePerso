@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { X, Save, Trash2, Pencil, Plus } from 'lucide-react'
+import { PRIORITIES, PRIORITY_META } from '../utils/deadlines'
 
 const PRESET_COLORS = [
   '#e8003d', '#ff4400', '#ff9800', '#ffeb3b',
@@ -47,31 +48,39 @@ function ColorPicker({ value, onChange }) {
   )
 }
 
+const EMPTY_FORM = { name: '', color: '#e8003d', priority: 'P3', emoji: '' }
+
 export default function CategoryDrawer({ open, categories, onCreate, onUpdate, onDelete, onClose }) {
   const [editId, setEditId] = useState(null)
-  const [form, setForm]     = useState({ name: '', color: '#e8003d' })
+  const [form, setForm]     = useState(EMPTY_FORM)
 
   if (!open) return null
 
   function startEdit(cat) {
     setEditId(cat.id)
-    setForm({ name: cat.name, color: cat.color || '#e8003d' })
+    setForm({
+      name:     cat.name,
+      color:    cat.color || '#e8003d',
+      priority: cat.priority || 'P3',
+      emoji:    cat.emoji || ''
+    })
   }
 
   function cancelEdit() {
     setEditId(null)
-    setForm({ name: '', color: '#e8003d' })
+    setForm(EMPTY_FORM)
   }
 
   function handleSave() {
     if (!form.name.trim()) return
-    const name = form.name.trim().toUpperCase()
+    const name  = form.name.trim().toUpperCase()
+    const emoji = form.emoji.trim() || null
     if (editId) {
-      onUpdate(editId, { name, color: form.color })
+      onUpdate(editId, { name, color: form.color, priority: form.priority, emoji })
       cancelEdit()
     } else {
-      onCreate({ name, color: form.color })
-      setForm({ name: '', color: '#e8003d' })
+      onCreate({ name, color: form.color, priority: form.priority, emoji })
+      setForm(EMPTY_FORM)
     }
   }
 
@@ -92,16 +101,48 @@ export default function CategoryDrawer({ open, categories, onCreate, onUpdate, o
             <div className="t-label" style={{ marginBottom: 12 }}>
               {editId ? '// MODIFIER' : '// NOUVELLE CATÉGORIE'}
             </div>
+            <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
+              <div className="field" style={{ flex: 1, marginBottom: 0 }}>
+                <label className="t-label">NOM</label>
+                <input
+                  className="input"
+                  value={form.name}
+                  onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                  placeholder="// nom de la catégorie"
+                  onKeyDown={e => e.key === 'Enter' && handleSave()}
+                  autoFocus
+                />
+              </div>
+              <div className="field" style={{ width: 68, marginBottom: 0 }}>
+                <label className="t-label">EMOJI</label>
+                <input
+                  className="input"
+                  value={form.emoji}
+                  onChange={e => setForm(f => ({ ...f, emoji: e.target.value }))}
+                  placeholder="🏷️"
+                  maxLength={4}
+                  style={{ textAlign: 'center', fontSize: 18, padding: '4px 6px' }}
+                />
+              </div>
+            </div>
             <div className="field" style={{ marginBottom: 12 }}>
-              <label className="t-label">NOM</label>
-              <input
-                className="input"
-                value={form.name}
-                onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                placeholder="// nom de la catégorie"
-                onKeyDown={e => e.key === 'Enter' && handleSave()}
-                autoFocus
-              />
+              <label className="t-label">PRIORITÉ PAR DÉFAUT</label>
+              <div className="priority-picker">
+                {PRIORITIES.map(p => {
+                  const meta = PRIORITY_META[p]
+                  return (
+                    <button
+                      key={p}
+                      type="button"
+                      className={`priority-btn ${form.priority === p ? 'active' : ''}`}
+                      style={{ color: meta.color }}
+                      onClick={() => setForm(f => ({ ...f, priority: p }))}
+                    >
+                      {p} · {meta.label}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
             <div className="field" style={{ marginBottom: 16 }}>
               <label className="t-label">COULEUR</label>
@@ -134,11 +175,20 @@ export default function CategoryDrawer({ open, categories, onCreate, onUpdate, o
                     borderLeft: `3px solid ${cat.color || 'var(--border-bright)'}`
                   }}
                 >
+                  {cat.emoji && (
+                    <span style={{ fontSize: 16, lineHeight: 1 }}>{cat.emoji}</span>
+                  )}
                   <span
                     className="t-mono"
                     style={{ flex: 1, fontWeight: 600, color: cat.color || 'var(--text-primary)' }}
                   >
                     {cat.name}
+                  </span>
+                  <span
+                    className="t-label"
+                    style={{ color: PRIORITY_META[cat.priority || 'P3'].color, fontFamily: 'var(--font-mono)', fontSize: 10 }}
+                  >
+                    {cat.priority || 'P3'}
                   </span>
                   <span className="t-label" style={{ color: cat.color, fontFamily: 'var(--font-mono)', fontSize: 10 }}>
                     {cat.color}

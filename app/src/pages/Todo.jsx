@@ -166,7 +166,10 @@ export default function Todo() {
             return (
               <div key={catId} style={{ marginBottom: 22 }}>
                 <div className="section-title" style={{ color: cat?.color || 'var(--text-secondary)' }}>
-                  // {cat ? cat.name : 'UNCATEGORIZED'} · {list.length}
+                  // {cat
+                    ? `${cat.emoji ? cat.emoji + ' ' : ''}${cat.name}${cat.priority ? ' · ' + cat.priority : ''}`
+                    : 'UNCATEGORIZED'
+                  } · {list.length}
                 </div>
                 <div className="task-list">
                   {list.map(t => (

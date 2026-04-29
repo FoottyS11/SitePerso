@@ -38,6 +38,7 @@ export default function TaskItem({ task, category, onToggle, onClick }) {
       <PriorityBadge priority={task.priority} compact />
 
       <div className="task-text">
+        {task.emoji && <span style={{ marginRight: 5, fontSize: 14 }}>{task.emoji}</span>}
         {task.text || <span className="t-muted">// untitled task</span>}
       </div>
 
@@ -46,7 +47,9 @@ export default function TaskItem({ task, category, onToggle, onClick }) {
         {task.markdown && <FileText size={12} className="t-dim" />}
         {task.reminder && <Bell size={12} className="t-dim" />}
         {category && (
-          <span style={{ color: category.color }}>· {category.name}</span>
+          <span style={{ color: category.color }}>
+            · {category.emoji ? `${category.emoji} ` : ''}{category.name}
+          </span>
         )}
         <span className={`deadline-tag ${status === 'late' ? 'deadline-late' : status === 'near' ? 'deadline-near' : ''} ${isAuto ? 'deadline-auto' : ''}`}>
           {formatDateFR(date)} · {relativeFromNow(date)}
