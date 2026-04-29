@@ -198,14 +198,15 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 700; letter-
 .launcher {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding: 22px;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 24px;
   background: var(--bg-surface);
   border: 1px solid var(--border);
   position: relative;
   overflow: hidden;
   cursor: pointer;
-  min-height: 150px;
+  min-height: 160px;
   clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
   transition: border-color 0.2s ease, background 0.2s ease;
 }
@@ -257,6 +258,9 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 700; letter-
   letter-spacing: 0.14em;
   color: var(--text-secondary);
   text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ─── Layout ─────────────────────────────────────────────── */
@@ -707,6 +711,12 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 700; letter-
 .grid-2 { display: grid; grid-template-columns: 2fr 1fr; gap: 18px; }
 @media (max-width: 880px) { .grid-2 { grid-template-columns: 1fr; } }
 
+.launcher-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
 /* ─── Section title ──────────────────────────────────────── */
 .section-title {
   display: flex; align-items: center; gap: 14px;
@@ -717,6 +727,7 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 700; letter-
   text-transform: uppercase;
   color: var(--text-secondary);
 }
+.section-title:first-child { margin-top: 0; }
 .section-title::before { content: ''; width: 4px; height: 14px; background: var(--accent-red); }
 .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 

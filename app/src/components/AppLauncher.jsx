@@ -1,11 +1,8 @@
 import { ExternalLink, ArrowRight } from 'lucide-react'
 
-/**
- * Card cliquable de la grille launcher.
- * @param {{ name, icon: ReactNode, url?: string, internal?: boolean, meta?: string, onClick?: () => void }} props
- */
 export default function AppLauncher({ name, icon, url, internal, meta, onClick }) {
   const isExternal = !!url && !internal
+
   const handleClick = (e) => {
     if (onClick) {
       e.preventDefault()
@@ -15,9 +12,12 @@ export default function AppLauncher({ name, icon, url, internal, meta, onClick }
 
   const content = (
     <>
-      <div className="row between">
+      <div className="row between" style={{ alignItems: 'flex-start' }}>
         <div className="launcher-icon">{icon}</div>
-        {isExternal ? <ExternalLink size={14} className="t-dim" /> : <ArrowRight size={14} className="t-dim" />}
+        {isExternal
+          ? <ExternalLink size={14} className="t-dim" style={{ marginTop: 2 }} />
+          : <ArrowRight   size={14} className="t-dim" style={{ marginTop: 2 }} />
+        }
       </div>
       <div>
         <div className="launcher-name">{name}</div>
