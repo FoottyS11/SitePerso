@@ -768,6 +768,35 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 700; letter-
 }
 .counter-up { animation: counter-up 0.4s ease both; }
 
+/* ─── Dashboard alerts / rappels ────────────────────────── */
+.alert-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.alert-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-left-width: 3px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+  font-size: 13px;
+}
+.alert-item:hover { background: var(--bg-elevated); }
+.alert-text { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.alert-late { border-left-color: var(--accent-red); background: rgba(232, 0, 61, 0.06); }
+.alert-near { border-left-color: var(--warning); background: rgba(255, 152, 0, 0.05); }
+.alert-p1   { border-left-color: var(--accent-red); }
+.alert-ok   { border-left-color: var(--border-bright); }
+
+/* ─── Dashboard ──────────────────────────────────────────── */
+.dashboard { display: flex; flex-direction: column; }
+
 /* ─── Empty / placeholder ────────────────────────────────── */
 .empty-state {
   padding: 60px 30px;

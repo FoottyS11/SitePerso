@@ -9,7 +9,7 @@ const LINKS = [
 
 export default function Sidebar() {
   return (
-    <aside className="sidebar">
+    <aside className="app-sidebar sidebar">
       <div className="sidebar-section">// NAV</div>
       {LINKS.map(({ to, label, icon: Icon }) => (
         <NavLink

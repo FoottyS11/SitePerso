@@ -15,7 +15,7 @@ export default function Header() {
   }
 
   return (
-    <header className="header">
+    <header className="app-header header">
       <div className="header-left">
         <Logo />
       </div>
