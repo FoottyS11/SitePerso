@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { X, Save, Trash2, Pencil, Plus } from 'lucide-react'
 import { PRIORITIES, PRIORITY_META } from '../utils/deadlines'
+import EmojiPicker from './EmojiPicker'
 
 const PRESET_COLORS = [
   '#e8003d', '#ff4400', '#ff9800', '#ffeb3b',
@@ -113,15 +114,11 @@ export default function CategoryDrawer({ open, categories, onCreate, onUpdate, o
                   autoFocus
                 />
               </div>
-              <div className="field" style={{ width: 68, marginBottom: 0 }}>
+              <div className="field" style={{ marginBottom: 0 }}>
                 <label className="t-label">EMOJI</label>
-                <input
-                  className="input"
+                <EmojiPicker
                   value={form.emoji}
-                  onChange={e => setForm(f => ({ ...f, emoji: e.target.value }))}
-                  placeholder="🏷️"
-                  maxLength={4}
-                  style={{ textAlign: 'center', fontSize: 18, padding: '4px 6px' }}
+                  onChange={v => setForm(f => ({ ...f, emoji: v }))}
                 />
               </div>
             </div>

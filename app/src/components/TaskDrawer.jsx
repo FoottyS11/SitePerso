@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { X, Trash2, Save, Eye, Edit3 } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import { PRIORITIES, PRIORITY_META, effectiveDeadline, formatDateFR, relativeFromNow } from '../utils/deadlines'
+import EmojiPicker from './EmojiPicker'
 
 const TASK_COLORS = [
   null,
@@ -143,13 +144,9 @@ export default function TaskDrawer({ open, task, categories, onClose, onSave, on
           {/* Emoji */}
           <div className="field">
             <label className="t-label">EMOJI <span className="t-muted">(facultatif)</span></label>
-            <input
-              className="input"
+            <EmojiPicker
               value={draft.emoji || ''}
-              onChange={e => patch({ emoji: e.target.value.trim() || null })}
-              placeholder="✅ 🔥 🚀 …"
-              maxLength={4}
-              style={{ width: 90 }}
+              onChange={v => patch({ emoji: v || null })}
             />
           </div>
 
