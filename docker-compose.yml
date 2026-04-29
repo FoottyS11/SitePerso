@@ -1,0 +1,23 @@
+services:
+  dashboard:
+    build:
+      context: .
+      dockerfile: app/Dockerfile
+      args:
+        VITE_MOCK_USER: ${VITE_MOCK_USER}
+        VITE_MOCK_PASS: ${VITE_MOCK_PASS}
+        VITE_URL_GARAGE: ${VITE_URL_GARAGE}
+        VITE_URL_N8N: ${VITE_URL_N8N}
+        VITE_URL_CV: ${VITE_URL_CV}
+    container_name: ctrl_hub_dashboard
+    ports:
+      - "80:80"
+    restart: unless-stopped
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost/"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
