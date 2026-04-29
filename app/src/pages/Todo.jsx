@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
-import { Plus, Filter, ListChecks, CalendarDays } from 'lucide-react'
+import { Plus, Filter, ListChecks, CalendarDays, Tags } from 'lucide-react'
 import TaskItem from '../components/TaskItem'
 import TaskDrawer from '../components/TaskDrawer'
+import CategoryDrawer from '../components/CategoryDrawer'
 import Calendar from '../components/Calendar'
 import { useTodos } from '../hooks/useTodos'
 import { useCategories } from '../hooks/useCategories'
@@ -16,11 +17,12 @@ const SORT_OPTIONS = [
 
 export default function Todo() {
   const { todos, create, update, remove, toggleStatus } = useTodos()
-  const { categories } = useCategories()
+  const { categories, create: createCat, update: updateCat, remove: removeCat } = useCategories()
   useReminders(todos)
 
   const [view, setView] = useState('list') // 'list' | 'calendar'
   const [drawerTask, setDrawerTask] = useState(null)
+  const [catDrawerOpen, setCatDrawerOpen] = useState(false)
   const [filters, setFilters] = useState({ status: 'all', priority: 'all', category: 'all' })
   const [sort, setSort] = useState('priority')
 
@@ -111,8 +113,11 @@ export default function Todo() {
               <CalendarDays size={12} style={{ verticalAlign: 'middle' }} /> CALENDAR
             </button>
           </div>
+          <button className="btn btn-ghost" onClick={() => setCatDrawerOpen(true)}>
+            <Tags size={14} style={{ verticalAlign: 'middle' }} /> &nbsp;CATEGORIES
+          </button>
           <button className="btn btn-primary" onClick={openNew}>
-            <Plus size={14} /> &nbsp;NEW TASK
+            <Plus size={14} style={{ verticalAlign: 'middle' }} /> &nbsp;NEW TASK
           </button>
         </div>
       </div>
@@ -185,14 +190,24 @@ export default function Todo() {
         <Calendar todos={todos} onTaskClick={(t) => setDrawerTask(t)} />
       )}
 
-      {/* Drawer */}
+      {/* Task Drawer */}
       <TaskDrawer
-        open={!!drawerTask}
+        open={!!drawerTask && !catDrawerOpen}
         task={drawerTask}
         categories={categories}
         onClose={() => setDrawerTask(null)}
         onSave={handleSave}
         onDelete={handleDelete}
+      />
+
+      {/* Category Drawer */}
+      <CategoryDrawer
+        open={catDrawerOpen}
+        categories={categories}
+        onCreate={createCat}
+        onUpdate={updateCat}
+        onDelete={removeCat}
+        onClose={() => setCatDrawerOpen(false)}
       />
     </div>
   )

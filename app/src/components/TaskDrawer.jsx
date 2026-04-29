@@ -3,6 +3,13 @@ import { X, Trash2, Save, Eye, Edit3 } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import { PRIORITIES, PRIORITY_META, effectiveDeadline, formatDateFR, relativeFromNow } from '../utils/deadlines'
 
+const TASK_COLORS = [
+  null,
+  '#e8003d', '#ff4400', '#ff9800', '#ffeb3b',
+  '#00e676', '#00bcd4', '#2196f3', '#9c27b0',
+  '#ffffff', '#6b6870'
+]
+
 const STATUSES = [
   { id: 'todo',      label: '☐ TODO' },
   { id: 'done',      label: '✓ DONE' },
@@ -112,6 +119,46 @@ export default function TaskDrawer({ open, task, categories, onClose, onSave, on
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
+          </div>
+
+          {/* Couleur de la task */}
+          <div className="field">
+            <label className="t-label">TASK COLOR</label>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+              {TASK_COLORS.map((c, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => patch({ color: c })}
+                  title={c || 'default'}
+                  style={{
+                    width: 28, height: 28, flexShrink: 0,
+                    background: c || 'var(--bg-base)',
+                    border: draft.color === c
+                      ? '2px solid var(--text-primary)'
+                      : '1px solid var(--border)',
+                    cursor: 'pointer',
+                    position: 'relative'
+                  }}
+                >
+                  {c === null && (
+                    <span style={{ fontSize: 10, color: 'var(--text-muted)', lineHeight: 1 }}>✕</span>
+                  )}
+                </button>
+              ))}
+              <input
+                type="color"
+                value={draft.color || '#e8003d'}
+                onChange={e => patch({ color: e.target.value })}
+                title="Couleur personnalisée"
+                style={{
+                  width: 28, height: 28, padding: 2,
+                  background: 'var(--bg-base)',
+                  border: '1px solid var(--border)',
+                  cursor: 'pointer', flexShrink: 0
+                }}
+              />
+            </div>
           </div>
 
           {/* Statut */}

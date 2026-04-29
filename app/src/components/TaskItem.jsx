@@ -7,7 +7,7 @@ export default function TaskItem({ task, category, onToggle, onClick }) {
   const status = deadlineStatus(date)
   const stateClass = task.status === 'done' ? 'is-done' : task.status === 'cancelled' ? 'is-cancelled' : ''
 
-  const leftBorderColor = category?.color || null
+  const leftBorderColor = task.color || category?.color || null
   const inlineStyle = leftBorderColor && task.status === 'todo'
     ? { borderLeftColor: leftBorderColor }
     : undefined
