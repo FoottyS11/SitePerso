@@ -49,7 +49,7 @@ function ColorPicker({ value, onChange }) {
   )
 }
 
-const EMPTY_FORM = { name: '', color: '#e8003d', priority: 'P3', emoji: '' }
+const EMPTY_FORM = { name: '', color: '#e8003d', priority: null, emoji: '' }
 
 export default function CategoryDrawer({ open, categories, onCreate, onUpdate, onDelete, onClose }) {
   const [editId, setEditId] = useState(null)
@@ -62,7 +62,7 @@ export default function CategoryDrawer({ open, categories, onCreate, onUpdate, o
     setForm({
       name:     cat.name,
       color:    cat.color || '#e8003d',
-      priority: cat.priority || 'P3',
+      priority: cat.priority || null,
       emoji:    cat.emoji || ''
     })
   }
@@ -124,7 +124,15 @@ export default function CategoryDrawer({ open, categories, onCreate, onUpdate, o
             </div>
             <div className="field" style={{ marginBottom: 12 }}>
               <label className="t-label">PRIORITÉ PAR DÉFAUT</label>
-              <div className="priority-picker">
+              <div className="priority-picker" style={{ flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  className={`priority-btn ${!form.priority ? 'active' : ''}`}
+                  style={{ color: 'var(--text-muted)' }}
+                  onClick={() => setForm(f => ({ ...f, priority: null }))}
+                >
+                  — · NONE
+                </button>
                 {PRIORITIES.map(p => {
                   const meta = PRIORITY_META[p]
                   return (
@@ -181,12 +189,14 @@ export default function CategoryDrawer({ open, categories, onCreate, onUpdate, o
                   >
                     {cat.name}
                   </span>
-                  <span
-                    className="t-label"
-                    style={{ color: PRIORITY_META[cat.priority || 'P3'].color, fontFamily: 'var(--font-mono)', fontSize: 10 }}
-                  >
-                    {cat.priority || 'P3'}
-                  </span>
+                  {cat.priority && (
+                    <span
+                      className="t-label"
+                      style={{ color: PRIORITY_META[cat.priority].color, fontFamily: 'var(--font-mono)', fontSize: 10 }}
+                    >
+                      {cat.priority}
+                    </span>
+                  )}
                   <span className="t-label" style={{ color: cat.color, fontFamily: 'var(--font-mono)', fontSize: 10 }}>
                     {cat.color}
                   </span>

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 
 const CATS = {
   '⭐': ['✅', '🔥', '🚀', '⭐', '💡', '🎯', '⚡', '🏆', '💪', '🎉', '⚠️', '❌', '📌', '🔑', '🧩'],
@@ -18,9 +18,10 @@ const CATS = {
 const CAT_KEYS = Object.keys(CATS)
 
 export default function EmojiPicker({ value, onChange }) {
-  const [open, setOpen]   = useState(false)
-  const [tab, setTab]     = useState(CAT_KEYS[0])
-  const ref               = useRef(null)
+  const [open, setOpen]       = useState(false)
+  const [tab, setTab]         = useState(CAT_KEYS[0])
+  const [dropAlign, setDropAlign] = useState('left')
+  const ref                   = useRef(null)
 
   useEffect(() => {
     if (!open) return
@@ -29,6 +30,14 @@ export default function EmojiPicker({ value, onChange }) {
     }
     document.addEventListener('mousedown', outside)
     return () => document.removeEventListener('mousedown', outside)
+  }, [open])
+
+  const handleToggle = useCallback(() => {
+    if (!open && ref.current) {
+      const rect = ref.current.getBoundingClientRect()
+      setDropAlign(rect.left + 272 > window.innerWidth - 8 ? 'right' : 'left')
+    }
+    setOpen(o => !o)
   }, [open])
 
   function pick(emoji) {
@@ -41,7 +50,7 @@ export default function EmojiPicker({ value, onChange }) {
       {/* Trigger */}
       <button
         type="button"
-        onClick={() => setOpen(o => !o)}
+        onClick={handleToggle}
         title="Choisir un emoji"
         style={{
           fontSize: 20,
@@ -80,7 +89,7 @@ export default function EmojiPicker({ value, onChange }) {
           position: 'absolute',
           zIndex: 2000,
           top: 'calc(100% + 4px)',
-          left: 0,
+          ...(dropAlign === 'right' ? { right: 0 } : { left: 0 }),
           background: 'var(--bg-elevated)',
           border: '1px solid var(--border-bright)',
           width: 272,
