@@ -875,3 +875,5 @@ h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 700; letter-
 .gap-sm { gap: 6px; }
 .flex-1 { flex: 1; }
 .divider { height: 1px; background: var(--border); margin: 12px 0; }
+
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }

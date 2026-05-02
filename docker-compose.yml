@@ -1,4 +1,22 @@
 services:
+  api:
+    build:
+      context: ./api
+    container_name: ctrl_hub_api
+    restart: unless-stopped
+    volumes:
+      - ./data:/data
+    ports:
+      - "127.0.0.1:3001:3001"
+    environment:
+      DATA_DIR: /data
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3001/api/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 15s
+
   dashboard:
     build:
       context: .
@@ -10,6 +28,9 @@ services:
         VITE_URL_N8N: ${VITE_URL_N8N}
         VITE_URL_CV: ${VITE_URL_CV}
     container_name: ctrl_hub_dashboard
+    depends_on:
+      api:
+        condition: service_healthy
     ports:
       - "80:80"
     restart: unless-stopped

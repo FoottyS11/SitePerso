@@ -1,58 +1,66 @@
 import { useCallback, useEffect, useState } from 'react'
-import { loadJSON, saveJSON, uid } from '../utils/storage'
+import { uid } from '../utils/storage'
 
-const KEY = 'hl_todos_v1'
+const API = '/api'
 
-const DEFAULTS = []
-
-/**
- * Hook todos — persistance localStorage.
- * TODO: remplacer par appels API quand backend en place.
- */
 export function useTodos() {
-  const [todos, setTodos] = useState(() => loadJSON(KEY, DEFAULTS))
+  const [todos, setTodos]     = useState([])
+  const [loading, setLoading] = useState(true)
 
-  useEffect(() => { saveJSON(KEY, todos) }, [todos])
+  useEffect(() => {
+    fetch(`${API}/todos`)
+      .then(r => r.json())
+      .then(data => { setTodos(data); setLoading(false) })
+      .catch(() => setLoading(false))
+  }, [])
 
   const create = useCallback((data) => {
     const now = new Date().toISOString()
-    const t = {
-      id: uid(),
-      text: '',
-      status: 'todo',
-      priority: 'P3',
-      categoryId: null,
-      color: null,
-      emoji: null,
-      comment: '',
-      markdown: '',
-      dueDate: null,
-      reminder: null,
-      createdAt: now,
-      updatedAt: now,
-      ...data
+    const optimistic = {
+      id: uid(), text: '', status: 'todo', priority: null, categoryId: null,
+      color: null, emoji: null, comment: '', markdown: '', dueDate: null,
+      reminder: null, createdAt: now, updatedAt: now, ...data,
     }
-    setTodos(prev => [t, ...prev])
-    return t
+    setTodos(prev => [optimistic, ...prev])
+    fetch(`${API}/todos`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(optimistic),
+    }).then(r => r.json()).then(saved => {
+      setTodos(prev => prev.map(t => t.id === optimistic.id ? saved : t))
+    }).catch(() => {
+      setTodos(prev => prev.filter(t => t.id !== optimistic.id))
+    })
+    return optimistic
   }, [])
 
   const update = useCallback((id, patch) => {
-    setTodos(prev => prev.map(t => t.id === id ? { ...t, ...patch, updatedAt: new Date().toISOString() } : t))
+    const now = new Date().toISOString()
+    setTodos(prev => prev.map(t => t.id === id ? { ...t, ...patch, updatedAt: now } : t))
+    fetch(`${API}/todos/${id}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(patch),
+    }).then(r => r.json()).then(saved => {
+      setTodos(prev => prev.map(t => t.id === id ? saved : t))
+    })
   }, [])
 
   const remove = useCallback((id) => {
     setTodos(prev => prev.filter(t => t.id !== id))
+    fetch(`${API}/todos/${id}`, { method: 'DELETE' })
   }, [])
 
   const toggleStatus = useCallback((id) => {
     setTodos(prev => prev.map(t => {
       if (t.id !== id) return t
-      const next = t.status === 'todo' ? 'done'
-        : t.status === 'done' ? 'cancelled'
-        : 'todo'
-      return { ...t, status: next, updatedAt: new Date().toISOString() }
+      const next = t.status === 'todo' ? 'done' : t.status === 'done' ? 'cancelled' : 'todo'
+      const updated = { ...t, status: next, updatedAt: new Date().toISOString() }
+      fetch(`${API}/todos/${id}`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: next }),
+      })
+      return updated
     }))
   }, [])
 
-  return { todos, create, update, remove, toggleStatus }
+  return { todos, loading, create, update, remove, toggleStatus }
 }
