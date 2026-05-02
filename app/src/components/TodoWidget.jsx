@@ -28,13 +28,14 @@ export default function TodoWidget({ todos }) {
       ) : (
         <div className="task-list">
           {top3.map(t => {
-            const { date, isAuto } = effectiveDeadline(t)
+            const hasDeadline = t.dueDate || t.priority
+            const { date, isAuto } = hasDeadline ? effectiveDeadline(t) : { date: null, isAuto: false }
             return (
               <div key={t.id} className={`task-item bl-${t.priority}`} style={{ cursor: 'default' }}>
                 <PriorityBadge priority={t.priority} compact />
                 <div className="task-text">{t.text || <span className="t-muted">// untitled</span>}</div>
                 <div className="task-meta">
-                  <span className={`deadline-tag ${isAuto ? 'deadline-auto' : ''}`}>{formatDateFR(date)}</span>
+                  {date && <span className={`deadline-tag ${isAuto ? 'deadline-auto' : ''}`}>{formatDateFR(date)}</span>}
                 </div>
               </div>
             )

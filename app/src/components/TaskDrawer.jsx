@@ -56,6 +56,7 @@ export default function TaskDrawer({ open, task, categories, onClose, onSave, on
   const autoPreview = useMemo(() => {
     if (!draft) return null
     if (draft.dueDate) return null
+    if (!draft.priority) return null
     const { date } = effectiveDeadline(draft)
     return `→ Deadline auto : ${formatDateFR(date)} (${relativeFromNow(date)})`
   }, [draft])
@@ -95,7 +96,15 @@ export default function TaskDrawer({ open, task, categories, onClose, onSave, on
           {/* Priorité */}
           <div className="field">
             <label className="t-label">PRIORITY</label>
-            <div className="priority-picker">
+            <div className="priority-picker" style={{ flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                className={`priority-btn ${!draft.priority ? 'active' : ''}`}
+                style={{ color: 'var(--text-muted)' }}
+                onClick={() => { patch({ priority: null }); setPriorityFromCat(false) }}
+              >
+                — · NONE
+              </button>
               {PRIORITIES.map(p => {
                 const meta = PRIORITY_META[p]
                 const active = draft.priority === p

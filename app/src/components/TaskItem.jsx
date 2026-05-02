@@ -3,8 +3,9 @@ import PriorityBadge from './PriorityBadge'
 import { effectiveDeadline, deadlineStatus, formatDateFR, relativeFromNow } from '../utils/deadlines'
 
 export default function TaskItem({ task, category, onToggle, onClick }) {
-  const { date, isAuto } = effectiveDeadline(task)
-  const status = deadlineStatus(date)
+  const hasDeadline = task.dueDate || task.priority
+  const { date, isAuto } = hasDeadline ? effectiveDeadline(task) : { date: null, isAuto: false }
+  const status = date ? deadlineStatus(date) : 'ok'
   const stateClass = task.status === 'done' ? 'is-done' : task.status === 'cancelled' ? 'is-cancelled' : ''
 
   const leftBorderColor = task.color || category?.color || null
@@ -51,10 +52,12 @@ export default function TaskItem({ task, category, onToggle, onClick }) {
             · {category.emoji ? `${category.emoji} ` : ''}{category.name}
           </span>
         )}
-        <span className={`deadline-tag ${status === 'late' ? 'deadline-late' : status === 'near' ? 'deadline-near' : ''} ${isAuto ? 'deadline-auto' : ''}`}>
-          {formatDateFR(date)} · {relativeFromNow(date)}
-          {isAuto && <span className="tag-auto">AUTO</span>}
-        </span>
+        {date && (
+          <span className={`deadline-tag ${status === 'late' ? 'deadline-late' : status === 'near' ? 'deadline-near' : ''} ${isAuto ? 'deadline-auto' : ''}`}>
+            {formatDateFR(date)} · {relativeFromNow(date)}
+            {isAuto && <span className="tag-auto">AUTO</span>}
+          </span>
+        )}
       </div>
     </div>
   )

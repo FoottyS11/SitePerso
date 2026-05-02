@@ -17,11 +17,23 @@ const CATS = {
 
 const CAT_KEYS = Object.keys(CATS)
 
+const NAV_BTN = {
+  fontSize: 12,
+  width: 28, height: 28,
+  background: 'transparent',
+  border: '1px solid var(--border)',
+  cursor: 'pointer',
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
+  color: 'var(--text-primary)',
+  flexShrink: 0,
+  transition: 'background 0.1s',
+}
+
 export default function EmojiPicker({ value, onChange }) {
-  const [open, setOpen]       = useState(false)
-  const [tab, setTab]         = useState(CAT_KEYS[0])
+  const [open, setOpen]           = useState(false)
+  const [tab, setTab]             = useState(CAT_KEYS[0])
   const [dropAlign, setDropAlign] = useState('left')
-  const ref                   = useRef(null)
+  const ref                       = useRef(null)
 
   useEffect(() => {
     if (!open) return
@@ -39,6 +51,11 @@ export default function EmojiPicker({ value, onChange }) {
     }
     setOpen(o => !o)
   }, [open])
+
+  const tabIdx = CAT_KEYS.indexOf(tab)
+
+  function prevTab() { setTab(CAT_KEYS[(tabIdx - 1 + CAT_KEYS.length) % CAT_KEYS.length]) }
+  function nextTab() { setTab(CAT_KEYS[(tabIdx + 1) % CAT_KEYS.length]) }
 
   function pick(emoji) {
     onChange(emoji)
@@ -95,34 +112,22 @@ export default function EmojiPicker({ value, onChange }) {
           width: 272,
           boxShadow: '0 12px 32px rgba(0,0,0,0.5)',
         }}>
-          {/* Category tabs */}
+          {/* Category navigation */}
           <div style={{
-            display: 'flex', overflowX: 'auto', gap: 2,
+            display: 'flex', alignItems: 'center', gap: 6,
             padding: '6px 8px',
             borderBottom: '1px solid var(--border)',
-            scrollbarWidth: 'none',
           }}>
-            {CAT_KEYS.map(cat => (
-              <button
-                key={cat}
-                type="button"
-                onClick={() => setTab(cat)}
-                title={cat}
-                style={{
-                  fontSize: 16,
-                  width: 32, height: 28,
-                  background: tab === cat ? 'var(--accent)' : 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  flexShrink: 0,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  opacity: tab === cat ? 1 : 0.6,
-                  transition: 'opacity 0.1s, background 0.1s',
-                }}
-              >
-                {cat}
-              </button>
-            ))}
+            <button type="button" onClick={prevTab} style={NAV_BTN} title="Précédent">◀</button>
+            <div style={{
+              flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            }}>
+              <span style={{ fontSize: 20, lineHeight: 1 }}>{tab}</span>
+              <span className="t-label" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                {tabIdx + 1}/{CAT_KEYS.length}
+              </span>
+            </div>
+            <button type="button" onClick={nextTab} style={NAV_BTN} title="Suivant">▶</button>
           </div>
 
           {/* Emoji grid */}
@@ -154,7 +159,7 @@ export default function EmojiPicker({ value, onChange }) {
             ))}
           </div>
 
-          {/* Current selection display */}
+          {/* Footer */}
           <div style={{
             padding: '6px 10px',
             borderTop: '1px solid var(--border)',
