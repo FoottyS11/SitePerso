@@ -169,7 +169,7 @@ export default function Todo() {
                   // {cat
                     ? `${cat.emoji ? cat.emoji + ' ' : ''}${cat.name}${cat.priority ? ' · ' + cat.priority : ''}`
                     : 'UNCATEGORIZED'
-                  } · {list.length}
+                  } · {list.filter(t => t.status === 'todo').length}
                 </div>
                 <div className="task-list">
                   {list.map(t => (
