@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Wrench, Workflow, FileText, CheckSquare, AlertTriangle, Clock } from 'lucide-react'
+import { Wrench, Workflow, FileText, CheckSquare, AlertTriangle, Clock, KanbanSquare } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import AppLauncher from '../components/AppLauncher'
 import { useTodos } from '../hooks/useTodos'
@@ -13,6 +13,7 @@ const URLS = {
 
 const APPS = [
   { name: 'TODO',     Icon: CheckSquare,   internal: true, meta: '// /todo',      route: '/todo' },
+  { name: 'PLANNER',  Icon: KanbanSquare,  internal: true, meta: '// /planner',   route: '/planner' },
   { name: 'GARAGE',   Icon: Wrench,        internal: true, meta: '// /garage',    route: '/garage' },
   { name: 'AUTOMATE', Icon: Workflow,       url: URLS.n8n,  meta: `// ${URLS.n8n}` },
   { name: 'CV',       Icon: FileText,       url: URLS.cv,   meta: `// ${URLS.cv}` },

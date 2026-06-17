@@ -1,11 +1,15 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, CheckSquare, Wrench, Settings } from 'lucide-react'
+import { LayoutDashboard, CheckSquare, Wrench, Settings, ClipboardList, KanbanSquare, Gift, Boxes } from 'lucide-react'
 import { useAuth } from '../auth/AuthProvider'
 
 const NAV_LINKS = [
   { to: '/dashboard', label: 'DASHBOARD', icon: LayoutDashboard },
   { to: '/todo',      label: 'TODO',      icon: CheckSquare },
-  { to: '/garage',    label: 'GARAGE',    icon: Wrench }
+  { to: '/planner',   label: 'PLANNER',   icon: KanbanSquare },
+  { to: '/wishlist',  label: 'WISHLIST',  icon: Gift },
+  { to: '/inventaire',label: 'INVENTAIRE MAISON', icon: Boxes },
+  { to: '/garage',    label: 'GARAGE',    icon: Wrench },
+  { to: '/bloc2',     label: 'BLOC 2',    icon: ClipboardList },
 ]
 
 export default function Sidebar() {

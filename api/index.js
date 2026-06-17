@@ -43,6 +43,46 @@ db.exec(`
     priority  TEXT,
     createdAt TEXT NOT NULL
   );
+  CREATE TABLE IF NOT EXISTS bloc2_checklist (
+    crit_id TEXT PRIMARY KEY,
+    checked INTEGER NOT NULL DEFAULT 0
+  );
+
+  /* ── PLANNER (clone Microsoft Planner) ─────────────────── */
+  CREATE TABLE IF NOT EXISTS planner_boards (
+    id        TEXT PRIMARY KEY,
+    name      TEXT NOT NULL DEFAULT 'NOUVEAU PLAN',
+    emoji     TEXT,
+    labels    TEXT NOT NULL DEFAULT '[]',
+    position  INTEGER NOT NULL DEFAULT 0,
+    createdAt TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS planner_buckets (
+    id        TEXT PRIMARY KEY,
+    boardId   TEXT NOT NULL,
+    name      TEXT NOT NULL DEFAULT 'NOUVEAU COMPARTIMENT',
+    position  INTEGER NOT NULL DEFAULT 0,
+    createdAt TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS planner_tasks (
+    id         TEXT PRIMARY KEY,
+    boardId    TEXT NOT NULL,
+    bucketId   TEXT NOT NULL,
+    title      TEXT NOT NULL DEFAULT '',
+    notes      TEXT DEFAULT '',
+    priority   TEXT NOT NULL DEFAULT 'medium',
+    progress   TEXT NOT NULL DEFAULT 'notstarted',
+    labels     TEXT NOT NULL DEFAULT '[]',
+    checklist  TEXT NOT NULL DEFAULT '[]',
+    assignees  TEXT NOT NULL DEFAULT '[]',
+    startDate  TEXT,
+    dueDate    TEXT,
+    position   INTEGER NOT NULL DEFAULT 0,
+    createdAt  TEXT NOT NULL,
+    updatedAt  TEXT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_planner_buckets_board ON planner_buckets(boardId);
+  CREATE INDEX IF NOT EXISTS idx_planner_tasks_board   ON planner_tasks(boardId);
 `)
 
 const uid = () => createHash('sha1').update(Date.now() + Math.random().toString()).digest('hex').slice(0, 12)
@@ -181,6 +221,25 @@ app.put('/api/backup-config', async (req, res) => {
   res.json(updated)
 })
 
+// ── BLOC 2 CHECKLIST ──────────────────────────────────────
+app.get('/api/bloc2', (_, res) => {
+  const rows = db.prepare('SELECT crit_id FROM bloc2_checklist WHERE checked=1').all()
+  res.json({ checked: rows.map(r => r.crit_id) })
+})
+
+app.put('/api/bloc2', (req, res) => {
+  const { critId, checked } = req.body
+  if (!critId) return res.status(400).json({ error: 'critId required' })
+  db.prepare('INSERT OR REPLACE INTO bloc2_checklist (crit_id, checked) VALUES (?,?)')
+    .run(critId, checked ? 1 : 0)
+  res.json({ ok: true })
+})
+
+app.delete('/api/bloc2', (_, res) => {
+  db.prepare('UPDATE bloc2_checklist SET checked=0').run()
+  res.json({ ok: true })
+})
+
 // ── MIGRATION localStorage → DB ───────────────────────────
 app.post('/api/migrate', (req, res) => {
   const { todos = [], categories = [] } = req.body
@@ -200,6 +259,161 @@ app.post('/api/migrate', (req, res) => {
   })
   run()
   res.json({ ok: true, imported: { todos: todos.length, categories: categories.length } })
+})
+
+// ── PLANNER ───────────────────────────────────────────────
+// Palette d'étiquettes par défaut (façon catégories Planner, thème HUD)
+const DEFAULT_LABELS = [
+  { id: 'l1', name: 'Étiquette rouge',   color: '#e8003d' },
+  { id: 'l2', name: 'Étiquette orange',  color: '#ff4400' },
+  { id: 'l3', name: 'Étiquette ambre',   color: '#ff9800' },
+  { id: 'l4', name: 'Étiquette jaune',   color: '#ffeb3b' },
+  { id: 'l5', name: 'Étiquette verte',   color: '#00e676' },
+  { id: 'l6', name: 'Étiquette cyan',    color: '#00bcd4' },
+  { id: 'l7', name: 'Étiquette bleue',   color: '#2196f3' },
+  { id: 'l8', name: 'Étiquette violette',color: '#9c27b0' },
+  { id: 'l9', name: 'Étiquette rose',    color: '#ff4081' },
+  { id: 'l10', name: 'Étiquette grise',  color: '#6b6870' },
+]
+
+const parseBoard  = (r) => r && ({ ...r, labels: safeJSON(r.labels, []) })
+const parseTask   = (r) => r && ({
+  ...r,
+  labels:    safeJSON(r.labels, []),
+  checklist: safeJSON(r.checklist, []),
+  assignees: safeJSON(r.assignees, []),
+})
+function safeJSON(v, fallback) {
+  try { return typeof v === 'string' ? JSON.parse(v) : (v ?? fallback) } catch { return fallback }
+}
+
+// — BOARDS —
+app.get('/api/planner/boards', (_, res) => {
+  const rows = db.prepare('SELECT * FROM planner_boards ORDER BY position ASC, createdAt ASC').all()
+  res.json(rows.map(parseBoard))
+})
+
+app.post('/api/planner/boards', (req, res) => {
+  const now = new Date().toISOString()
+  const maxPos = db.prepare('SELECT COALESCE(MAX(position),-1) p FROM planner_boards').get().p
+  const b = {
+    id: uid(), name: 'NOUVEAU PLAN', emoji: null,
+    labels: DEFAULT_LABELS, position: maxPos + 1, createdAt: now, ...req.body,
+  }
+  db.prepare('INSERT OR REPLACE INTO planner_boards (id,name,emoji,labels,position,createdAt) VALUES (?,?,?,?,?,?)')
+    .run(b.id, b.name, b.emoji, JSON.stringify(b.labels), b.position, b.createdAt)
+  // Seed 3 compartiments par défaut
+  const seed = db.prepare('INSERT INTO planner_buckets (id,boardId,name,position,createdAt) VALUES (?,?,?,?,?)')
+  ;['À FAIRE', 'EN COURS', 'TERMINÉ'].forEach((name, i) => seed.run(uid(), b.id, name, i, now))
+  res.json(parseBoard(db.prepare('SELECT * FROM planner_boards WHERE id=?').get(b.id)))
+})
+
+app.put('/api/planner/boards/:id', (req, res) => {
+  const row = db.prepare('SELECT * FROM planner_boards WHERE id=?').get(req.params.id)
+  if (!row) return res.status(404).json({ error: 'Not found' })
+  const b = { ...parseBoard(row), ...req.body, id: req.params.id }
+  db.prepare('UPDATE planner_boards SET name=?,emoji=?,labels=?,position=? WHERE id=?')
+    .run(b.name, b.emoji, JSON.stringify(b.labels), b.position, b.id)
+  res.json(parseBoard(db.prepare('SELECT * FROM planner_boards WHERE id=?').get(b.id)))
+})
+
+app.delete('/api/planner/boards/:id', (req, res) => {
+  const tx = db.transaction((id) => {
+    db.prepare('DELETE FROM planner_tasks WHERE boardId=?').run(id)
+    db.prepare('DELETE FROM planner_buckets WHERE boardId=?').run(id)
+    db.prepare('DELETE FROM planner_boards WHERE id=?').run(id)
+  })
+  tx(req.params.id)
+  res.json({ ok: true })
+})
+
+// Données complètes d'un board (buckets + tasks)
+app.get('/api/planner/boards/:id/data', (req, res) => {
+  const board = parseBoard(db.prepare('SELECT * FROM planner_boards WHERE id=?').get(req.params.id))
+  if (!board) return res.status(404).json({ error: 'Not found' })
+  const buckets = db.prepare('SELECT * FROM planner_buckets WHERE boardId=? ORDER BY position ASC, createdAt ASC').all(req.params.id)
+  const tasks = db.prepare('SELECT * FROM planner_tasks WHERE boardId=? ORDER BY position ASC, createdAt ASC').all(req.params.id).map(parseTask)
+  res.json({ board, buckets, tasks })
+})
+
+// — BUCKETS —
+app.post('/api/planner/buckets', (req, res) => {
+  const now = new Date().toISOString()
+  const maxPos = db.prepare('SELECT COALESCE(MAX(position),-1) p FROM planner_buckets WHERE boardId=?').get(req.body.boardId)?.p ?? -1
+  const b = { id: uid(), name: 'NOUVEAU COMPARTIMENT', position: maxPos + 1, createdAt: now, ...req.body }
+  db.prepare('INSERT OR REPLACE INTO planner_buckets (id,boardId,name,position,createdAt) VALUES (?,?,?,?,?)')
+    .run(b.id, b.boardId, b.name, b.position, b.createdAt)
+  res.json(b)
+})
+
+app.put('/api/planner/buckets/:id', (req, res) => {
+  const row = db.prepare('SELECT * FROM planner_buckets WHERE id=?').get(req.params.id)
+  if (!row) return res.status(404).json({ error: 'Not found' })
+  const b = { ...row, ...req.body, id: req.params.id }
+  db.prepare('UPDATE planner_buckets SET name=?,position=? WHERE id=?').run(b.name, b.position, b.id)
+  res.json(b)
+})
+
+app.delete('/api/planner/buckets/:id', (req, res) => {
+  const tx = db.transaction((id) => {
+    db.prepare('DELETE FROM planner_tasks WHERE bucketId=?').run(id)
+    db.prepare('DELETE FROM planner_buckets WHERE id=?').run(id)
+  })
+  tx(req.params.id)
+  res.json({ ok: true })
+})
+
+// — TASKS —
+const TASK_COLS = ['boardId','bucketId','title','notes','priority','progress','labels','checklist','assignees','startDate','dueDate','position','createdAt','updatedAt']
+function serializeTask(t) {
+  return {
+    ...t,
+    labels:    JSON.stringify(t.labels ?? []),
+    checklist: JSON.stringify(t.checklist ?? []),
+    assignees: JSON.stringify(t.assignees ?? []),
+  }
+}
+
+app.post('/api/planner/tasks', (req, res) => {
+  const now = new Date().toISOString()
+  const maxPos = db.prepare('SELECT COALESCE(MAX(position),-1) p FROM planner_tasks WHERE bucketId=?').get(req.body.bucketId)?.p ?? -1
+  const t = {
+    id: uid(), title: '', notes: '', priority: 'medium', progress: 'notstarted',
+    labels: [], checklist: [], assignees: [], startDate: null, dueDate: null,
+    position: maxPos + 1, createdAt: now, updatedAt: now, ...req.body,
+  }
+  const s = serializeTask(t)
+  db.prepare(`INSERT OR REPLACE INTO planner_tasks (id,${TASK_COLS.join(',')}) VALUES (?,${TASK_COLS.map(() => '?').join(',')})`)
+    .run(t.id, ...TASK_COLS.map(c => s[c]))
+  res.json(parseTask(db.prepare('SELECT * FROM planner_tasks WHERE id=?').get(t.id)))
+})
+
+app.put('/api/planner/tasks/:id', (req, res) => {
+  const row = db.prepare('SELECT * FROM planner_tasks WHERE id=?').get(req.params.id)
+  if (!row) return res.status(404).json({ error: 'Not found' })
+  const t = { ...parseTask(row), ...req.body, id: req.params.id, updatedAt: new Date().toISOString() }
+  const s = serializeTask(t)
+  db.prepare(`UPDATE planner_tasks SET ${TASK_COLS.map(c => `${c}=?`).join(',')} WHERE id=?`)
+    .run(...TASK_COLS.map(c => s[c]), t.id)
+  res.json(parseTask(db.prepare('SELECT * FROM planner_tasks WHERE id=?').get(t.id)))
+})
+
+app.delete('/api/planner/tasks/:id', (req, res) => {
+  db.prepare('DELETE FROM planner_tasks WHERE id=?').run(req.params.id)
+  res.json({ ok: true })
+})
+
+// Réordonnancement / déplacement en masse (drag & drop)
+app.put('/api/planner/reorder', (req, res) => {
+  const { tasks = [], buckets = [] } = req.body
+  const tx = db.transaction(() => {
+    const ut = db.prepare('UPDATE planner_tasks SET bucketId=?, position=?, progress=?, priority=?, updatedAt=? WHERE id=?')
+    for (const t of tasks) ut.run(t.bucketId, t.position, t.progress, t.priority, new Date().toISOString(), t.id)
+    const ub = db.prepare('UPDATE planner_buckets SET position=? WHERE id=?')
+    for (const b of buckets) ub.run(b.position, b.id)
+  })
+  tx()
+  res.json({ ok: true })
 })
 
 // ── HEALTH ────────────────────────────────────────────────
